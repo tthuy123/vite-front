@@ -2,10 +2,7 @@ import React, { useRef, useState, useEffect } from 'react';
 import { Button } from './ui/Button';
 import { Card, CardContent } from './ui/Card';
 
-interface SignLanguageDetectorProps {
-}
-
-const SignLanguageDetector: React.FC<SignLanguageDetectorProps> = () => {
+const SignLanguageDetector: React.FC = () => {
   const videoRef = useRef<HTMLVideoElement>(null);
   const [isCapturing, setIsCapturing] = useState(false);
   const [error, setError] = useState<string | null>(null);
