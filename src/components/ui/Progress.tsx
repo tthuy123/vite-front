@@ -5,7 +5,7 @@ import { cn } from "../../lib/utils";
 
 const ProgressPrimitive = {
   Root: React.forwardRef<HTMLDivElement, React.HTMLAttributes<HTMLDivElement> & { value?: number }>(
-    function Root({ className, value, ...props }, ref) {
+    function Root({ className, ...props }, ref) {
       return <div ref={ref} className={className} {...props} />;
     }
   ),
