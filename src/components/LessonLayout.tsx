@@ -1,8 +1,10 @@
 import React from "react";
 import { useState, useEffect, useRef } from "react";
 import LessonTitle from "./LessonTitle";
-import SignLanguageDetector from "./SignLanguageDetector";
+//import SignLanguageDetector from "./SignLanguageDetector";
+import CameraView from "./CameraView";
 import { Button } from "./ui/Button";
+//import { Camera } from "react-feather";
 
 interface Lesson {
   id: string;
@@ -137,7 +139,7 @@ const LessonLayout: React.FC<LessonLayoutProps> = ({
 
           {/* Camera for practice (automatically starts) */}
           <div className="bg-gray-100 rounded-lg overflow-hidden aspect-video">
-            <SignLanguageDetector />
+            <CameraView />
           </div>
         </div>
 
