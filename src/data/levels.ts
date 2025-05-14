@@ -1,44 +1,67 @@
 import type { Level, Chapter } from '../types';
+import wlaslData from '../WLASL100_train.json';
 
-const sampleVideoSrcs = [
-  "data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='320' height='240' viewBox='0 0 320 240'%3E%3Crect width='320' height='240' fill='%23068484'/%3E%3Ctext x='160' y='120' font-family='sans-serif' font-size='80' font-weight='bold' fill='white' text-anchor='middle' dominant-baseline='middle'%3E1%3C/text%3E%3C/svg%3E",
-  "data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='320' height='240' viewBox='0 0 320 240'%3E%3Crect width='320' height='240' fill='%23068484'/%3E%3Ctext x='160' y='120' font-family='sans-serif' font-size='80' font-weight='bold' fill='white' text-anchor='middle' dominant-baseline='middle'%3E2%3C/text%3E%3C/svg%3E",
-  "data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='320' height='240' viewBox='0 0 320 240'%3E%3Crect width='320' height='240' fill='%23068484'/%3E%3Ctext x='160' y='120' font-family='sans-serif' font-size='80' font-weight='bold' fill='white' text-anchor='middle' dominant-baseline='middle'%3E3%3C/text%3E%3C/svg%3E",
+const allSignData = wlaslData;
+
+const allGlosses = allSignData.map(item => item.gloss);
+
+export const levels: Level[] = [
+  {
+    level: 1,
+    title: "Level 1",
+    unlocked: true,
+    chapters: createChaptersFromGlosses(allGlosses)
+  }
 ];
 
-export const levels: Level[] = Array.from({ length: 10 }, (_, levelIdx) => {
-  const level = levelIdx + 1;
-  const unlocked = level === 1; 
-
-  const chapterCounts = [5, 4, 4, 7, 5, 4]; 
-
-  const chapters: Chapter[] =
-    level === 1
-      ? chapterCounts.map((lessonCount, chapterIdx) => {
-          const chapterNum = chapterIdx + 1;
-          return {
-            id: `chapter-${chapterNum}`,
-            title: `Chapter ${chapterNum}`,
-            lessons: lessonCount,
-            completed: 0,
-            lessonGroups: [],
-            lessonList: Array.from({ length: lessonCount }, (_, i) => {
-              const lessonNum = i + 1;
-              return {
-                title: `Lesson ${lessonNum}`,
-                completed: false, 
-                locked: i !== 0, 
-                id: `level-${level}-chapter-${chapterNum}-lesson-${lessonNum}`,
-                videoSrc: sampleVideoSrcs[i % sampleVideoSrcs.length],
-                duration: 30, 
-              };
-            }),
-          };
-        })
-      : [];
-
-  return { level, title: `Level ${level}`, unlocked, chapters };
-});
+function createChaptersFromGlosses(glosses: string[]): Chapter[] {
+  const numChapters = Math.min(5, Math.ceil(glosses.length / 5));
+  const glossesPerChapter = Math.ceil(glosses.length / numChapters);
+  
+  const chapters: Chapter[] = [];
+  
+  for (let i = 0; i < numChapters; i++) {
+    const startIdx = i * glossesPerChapter;
+    const endIdx = Math.min((i + 1) * glossesPerChapter, glosses.length);
+    
+    if (startIdx >= glosses.length) break;
+    
+    const chapterGlosses = glosses.slice(startIdx, endIdx);
+    const chapterLessons = chapterGlosses.map((gloss, index) => {
+      const signData = allSignData.find(item => item.gloss === gloss);
+      
+      if (!signData) {
+        console.warn(`Sign data not found for gloss: ${gloss}`);
+      }
+      
+      const videoSrc = signData && signData.instances.length > 0 
+        ? signData.instances[0].url 
+        : "";
+      
+      return {
+        title: gloss.charAt(0).toUpperCase() + gloss.slice(1), 
+        completed: false,
+        locked: index !== 0, 
+        id: `level-1-chapter-${i+1}-lesson-${index+1}-${gloss}`,
+        videoSrc: videoSrc,
+        duration: 30,
+        signData: signData, 
+      };
+    });
+    
+    chapters.push({
+      id: `chapter-${i+1}`,
+      title: `Chapter ${i+1}`,
+      description: `${chapterLessons.length} sign language lessons`,
+      lessons: chapterLessons.length,
+      completed: 0,
+      lessonGroups: [],
+      lessonList: chapterLessons,
+    });
+  }
+  
+  return chapters;
+}
 
 
 export const completeLesson = (levelIndex: number, chapterIndex: number, lessonIndex: number): boolean => {
@@ -59,13 +82,14 @@ export const completeLesson = (levelIndex: number, chapterIndex: number, lessonI
 
   if (lessonIndex + 1 < chapter.lessonList.length) {
     chapter.lessonList[lessonIndex + 1].locked = false;
-  } else if (chapterIndex + 1 < level.chapters.length) {
-
+  } 
+  else if (chapterIndex + 1 < level.chapters.length) {
     const nextChapter = level.chapters[chapterIndex + 1];
     if (nextChapter.lessonList.length > 0) {
       nextChapter.lessonList[0].locked = false;
     }
-  } else if (levelIndex + 1 < levels.length) {
+  }
+  else if (levelIndex + 1 < levels.length) {
     const nextLevel = levels[levelIndex + 1];
     nextLevel.unlocked = true;
   }
@@ -102,6 +126,7 @@ export const getUnlockedLessons = (levelIndex: number, chapterIndex: number) => 
       id: lesson.id || "",
       title: lesson.title,
       videoUrl: lesson.videoSrc || "",
-      duration: lesson.duration || 30
+      duration: lesson.duration || 30,
+      signData: lesson.signData, 
     }));
 };

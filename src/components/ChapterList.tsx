@@ -1,4 +1,4 @@
-import React, { useState } from 'react';
+import React, { useState, useEffect } from 'react';
 import type { Chapter } from '../types';
 import { CheckCircle, Lock, ChevronLeft, ChevronRight } from 'react-feather';
 
@@ -13,6 +13,25 @@ const ChapterList: React.FC<Props> = ({ chapters, onSelect, onLessonSelect }) =>
   const [currentPage, setCurrentPage] = useState<number>(1);
   
   const LESSONS_PER_PAGE = 5;
+
+  // Auto-open the first chapter with unlocked lessons on initial render
+  useEffect(() => {
+    if (openChapterIndex === null && chapters.length > 0) {
+      // Find first chapter with unlocked lessons
+      const firstUnlockedChapterIndex = chapters.findIndex(
+        chapter => chapter.lessonList.some(lesson => !lesson.locked)
+      );
+      
+      if (firstUnlockedChapterIndex !== -1) {
+        setOpenChapterIndex(firstUnlockedChapterIndex);
+        onSelect(firstUnlockedChapterIndex);
+      } else {
+        // If no unlocked lessons found, just open the first chapter
+        setOpenChapterIndex(0);
+        onSelect(0);
+      }
+    }
+  }, []); // eslint-disable-line react-hooks/exhaustive-deps
 
   const toggleChapter = (index: number) => {
     if (openChapterIndex === index) {
@@ -47,6 +66,11 @@ const ChapterList: React.FC<Props> = ({ chapters, onSelect, onLessonSelect }) =>
     return chapter.lessonList.slice(startIdx, endIdx);
   };
 
+  const getChapterProgress = (chapter: Chapter) => {
+    const completedLessons = chapter.lessonList.filter(lesson => lesson.completed).length;
+    return (completedLessons / chapter.lessonList.length) * 100;
+  };
+
   return (
     <div className="flex-1 overflow-y-auto p-4 bg-gray-50">
       <h1 className="text-2xl font-bold mb-6 text-teal-800">Chọn chương để học</h1>
@@ -56,39 +80,56 @@ const ChapterList: React.FC<Props> = ({ chapters, onSelect, onLessonSelect }) =>
             className="w-full flex items-center justify-between p-4 bg-white rounded-lg shadow-sm border border-gray-200 hover:border-teal-500"
             onClick={() => toggleChapter(chIndex)}
           >
-            <div>
-              <span className="font-medium">{chapter.title}</span>
-              <div className="text-sm text-gray-500 mt-1">
-                {chapter.completed}/{chapter.lessons} bài học hoàn thành
+            <div className="flex-1">
+              <div className="flex items-center justify-between mb-2">
+                <span className="font-medium">{chapter.title}</span>
+                <span className="text-sm text-gray-500">
+                  {chapter.completed}/{chapter.lessons} bài học hoàn thành
+                </span>
+              </div>
+              <div className="w-full bg-gray-200 rounded-full h-2">
+                <div 
+                  className="bg-teal-600 h-2 rounded-full" 
+                  style={{ width: `${getChapterProgress(chapter)}%` }}
+                />
               </div>
             </div>
-            <div className="text-teal-600">
+            <div className="text-teal-600 ml-4">
               {openChapterIndex === chIndex ? "▲" : "▼"}
             </div>
           </button>
 
           {openChapterIndex === chIndex && (
             <div className="bg-white mt-1 p-4 rounded-lg shadow-sm border border-gray-200">
-              {getCurrentPageLessons(chapter).map((lesson, lIndex) => (
-                <div
-                  key={lIndex}
-                  className={`p-3 mb-2 flex items-center justify-between rounded-md ${
-                    lesson.locked
-                      ? "bg-gray-100 text-gray-400 cursor-not-allowed"
-                      : lesson.completed
-                      ? "bg-green-50 cursor-pointer hover:bg-green-100"
-                      : "bg-white border border-gray-200 cursor-pointer hover:bg-teal-50"
-                  }`}
-                  onClick={() => !lesson.locked && onLessonSelect(lesson.id || "")}
-                >
-                  <span>{lesson.title}</span>
-                  {lesson.completed ? (
-                    <CheckCircle className="h-5 w-5 text-green-600" />
-                  ) : lesson.locked ? (
-                    <Lock className="h-5 w-5" />
-                  ) : null}
-                </div>
-              ))}
+              {getCurrentPageLessons(chapter).map((lesson, lIndex) => {
+                const absoluteLessonIndex = (currentPage - 1) * LESSONS_PER_PAGE + lIndex;
+                
+                return (
+                  <div
+                    key={lIndex}
+                    className={`p-3 mb-2 flex items-center justify-between rounded-md ${
+                      lesson.locked
+                        ? "bg-gray-100 text-gray-400 cursor-not-allowed"
+                        : lesson.completed
+                        ? "bg-green-50 cursor-pointer hover:bg-green-100"
+                        : "bg-white border border-gray-200 cursor-pointer hover:bg-teal-50"
+                    }`}
+                    onClick={() => !lesson.locked && onLessonSelect(lesson.id || "")}
+                  >
+                    <div className="flex items-center">
+                      <span className="w-6 h-6 flex items-center justify-center rounded-full bg-gray-100 text-xs mr-3">
+                        {absoluteLessonIndex + 1}
+                      </span>
+                      <span>{lesson.title}</span>
+                    </div>
+                    {lesson.completed ? (
+                      <CheckCircle className="h-5 w-5 text-green-600" />
+                    ) : lesson.locked ? (
+                      <Lock className="h-5 w-5" />
+                    ) : null}
+                  </div>
+                );
+              })}
               
               {chapter.lessonList.length > LESSONS_PER_PAGE && (
                 <div className="flex items-center justify-between mt-4 pt-2 border-t border-gray-200">
