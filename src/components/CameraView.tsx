@@ -12,10 +12,12 @@ import {
   POSE_CONNECTIONS,
 } from "@mediapipe/holistic";
 
-export default function CameraView() {
+type Props = {
+  setPredictions: (value: string[]) => void;
+};
+export default function CameraView({ setPredictions }: Props) {
   const videoRef = useRef<HTMLVideoElement>(null);
   const canvasRef = useRef<HTMLCanvasElement>(null);
-  const [prediction, setPrediction] = useState<string>("");
 
   useEffect(() => {
     if (!videoRef.current || !canvasRef.current) return;
@@ -25,6 +27,7 @@ export default function CameraView() {
 
     setupHolistic(videoRef.current, (results) => {
       if (!ctx || !canvas || !results.image) return;
+      console.log("results", results);
 
       // Resize canvas theo video
       canvas.width = results.image.width;
@@ -64,8 +67,9 @@ export default function CameraView() {
         });
       }
 
-      if (results.prediction) {
-        setPrediction(results.prediction);
+      if (results.predictions) {
+        console.log("in cameraview",results.predictions)
+        setPredictions(results.predictions);
       }
     });
   }, []);
@@ -74,9 +78,6 @@ export default function CameraView() {
     <div className="relative w-fit">
       <video ref={videoRef} style={{ display: "none" }} />
       <canvas ref={canvasRef} className="rounded-xl shadow-lg" />
-      <div className="absolute bottom-2 left-2 bg-black bg-opacity-50 text-white p-2 rounded">
-        {prediction && <p>Hành động: {prediction}</p>}
-      </div>
     </div>
   );
 }

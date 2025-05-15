@@ -1,5 +1,5 @@
 import type { Level, Chapter } from '../types';
-import wlaslData from '../WLASL100_train.json';
+import wlaslData from '../easy.json';
 
 const allSignData = wlaslData;
 

@@ -3,7 +3,6 @@ import LessonTitle from "./LessonTitle";
 //import SignLanguageDetector from "./SignLanguageDetector";
 import CameraView from "./CameraView";
 import { Button } from "./ui/Button";
-//import { Camera } from "react-feather";
 
 interface VideoVariation {
   source: string;
@@ -34,7 +33,7 @@ interface LessonLayoutProps {
   onComplete: () => void;
   levelIndex: number;
   chapterIndex: number;
-  onLessonCompleted?: (lessonId: string) => void; // Callback for lesson completion
+  onLessonCompleted?: (lessonId: string) => void;
 }
 
 const LessonLayout: React.FC<LessonLayoutProps> = ({
@@ -48,10 +47,13 @@ const LessonLayout: React.FC<LessonLayoutProps> = ({
   const [customVideoUrl, setCustomVideoUrl] = useState<string | null>(null);
   const [selectedVariation, setSelectedVariation] = useState<number>(0);
   const [lessonCompleted, setLessonCompleted] = useState(false);
+  const [predictions, setPredictions] = useState<string[]>([]);
   const videoRef = useRef<HTMLVideoElement>(null);
   const fileInputRef = useRef<HTMLInputElement>(null);
   
   const currentLesson = lessons[currentLessonIndex];
+  console.log("currentLesson", currentLesson);
+  console.log("currentLesson?.signData?.gloss", currentLesson?.signData?.gloss);
   
   const variations = currentLesson?.variations || 
     (currentLesson?.signData?.instances?.map(instance => ({
@@ -67,13 +69,16 @@ const LessonLayout: React.FC<LessonLayoutProps> = ({
   }, [currentLessonIndex]);
 
   useEffect(() => {
-    if (progress >= 100 && !lessonCompleted) {
+    console.log("predictions in lessonlayout", predictions);
+    if (currentLesson?.signData?.gloss && predictions.includes(currentLesson?.signData?.gloss) && !lessonCompleted) {
+      console.log("predictions in lessonlayout", predictions);
+      console.log("currentLesson?.signData?.gloss", currentLesson?.signData?.gloss)
       setLessonCompleted(true);
       if (onLessonCompleted && currentLesson) {
         onLessonCompleted(currentLesson.id);
       }
     }
-  }, [progress, lessonCompleted, currentLesson, onLessonCompleted]);
+  }, [lessonCompleted, currentLesson, onLessonCompleted, predictions]);
 
   const handleNext = () => {
   if (lessonCompleted) {
@@ -230,7 +235,7 @@ const LessonLayout: React.FC<LessonLayoutProps> = ({
 
           {/* Camera for practice (automatically starts) */}
           <div className="bg-gray-100 rounded-lg overflow-hidden aspect-video">
-            <CameraView />
+            <CameraView setPredictions={setPredictions}/>
           </div>
         </div>
 
